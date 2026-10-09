@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>要介護(要支援)認定者数・受給者数</title>
+<style>
+:root{--bg:#f6f7f5;--fg:#1d2b2a;--sub:#5d6b69;--line:#cfd6d3;--m:#2f6f8f;--f:#c9663d;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15201f;--fg:#e8eeec;--sub:#9fb0ad;--line:#33423f;--m:#6fb4d4;--f:#ee9a72}}
+:root[data-theme="dark"]{--bg:#15201f;--fg:#e8eeec;--sub:#9fb0ad;--line:#33423f;--m:#6fb4d4;--f:#ee9a72}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:"Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif;line-height:1.6}
+main{max-width:760px;margin:0 auto;padding:20px 16px 32px}
+h2{font-size:1.05rem;margin:28px 0 4px}
+.note{color:var(--sub);font-size:.78rem;margin:2px 0 10px}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:480px;font-size:.88rem;font-variant-numeric:tabular-nums}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right}
+th:first-child,td:first-child{text-align:left}
+thead th{border-bottom:2px solid var(--fg);font-weight:600}
+tr.grp td{text-align:left;font-weight:700;padding-top:14px;border-bottom:1px solid var(--fg)}
+.box{position:relative;width:100%}
+.legend{display:flex;gap:16px;font-size:.82rem;margin:6px 0}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+</style>
+</head>
+<body>
+<main>
+<h2>性別にみた認定者数・受給者数と受給率</h2>
+<p class="note">各年4月審査分。単位:千人、受給率は%。増減は筆者が算出(受給率はポイント差)。</p>
+<div class="scroll"><table id="t"></table></div>
+
+<h2>65歳以上の性・年齢階級別 受給者数(令和7年11月審査分)</h2>
+<div class="legend"><span><i style="background:var(--m)"></i>男</span><span><i style="background:var(--f)"></i>女</span></div>
+<div class="box" style="height:360px"><canvas id="c1"></canvas></div>
+<p class="note">単位:千人</p>
+
+<h2>性・年齢階級別人口に占める受給者数の割合</h2>
+<div class="box" style="height:300px"><canvas id="c2"></canvas></div>
+<p class="note">受給者数/性・年齢階級別人口×100。人口は総務省統計局「人口推計」2025年10月1日現在の総人口を使用。</p>
+
+<p class="note">出典:<a href="https://www.mhlw.go.jp/toukei/saikin/hw/kaigo/kyufu/25/index.html" target="_blank" rel="noopener">厚生労働省「令和7 (2025) 年度・介護給付費等実態統計の概況」</a>を基に筆者が作成</p>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const rows=[
+ ["認定者数(千人)",[["総数",7492.0,7618.9],["男",2438.1,2484.8],["女",5053.9,5134.1]]],
+ ["受給者数(千人)",[["総数",5726.4,5858.9],["男",1777.0,1825.6],["女",3949.4,4033.3]]],
+ ["認定者数に占める受給者数の割合(%)",[["総数",76.4,76.9],["男",72.9,73.5],["女",78.1,78.6]]]
+];
+const fmt=(v,d=1)=>v.toLocaleString("ja-JP",{minimumFractionDigits:d,maximumFractionDigits:d});
+let h='<thead><tr><th></th><th>令和7年<br>(2025)</th><th>令和8年<br>(2026)</th><th>増減</th></tr></thead><tbody>';
+rows.forEach(([g,list])=>{
+ h+=`<tr class="grp"><td colspan="4">${g}</td></tr>`;
+ list.forEach(([n,a,b])=>{const d=b-a;h+=`<tr><td>${n}</td><td>${fmt(a)}</td><td>${fmt(b)}</td><td>${d>=0?"+":"−"}${fmt(Math.abs(d))}</td></tr>`});
+});
+document.getElementById("t").innerHTML=h+"</tbody>";
+
+const css=getComputedStyle(document.documentElement);
+const v=n=>css.getPropertyValue(n).trim();
+const ages=["65〜69歳","70〜74","75〜79","80〜84","85〜89","90〜94","95歳以上"];
+const male=[83.7,164.9,301.4,380.4,420.6,298.3,101.5];
+const female=[66.6,159.8,402.2,759.1,1073.4,998.8,513.5];
+const rm=[2.4,4.5,8.0,15.3,28.5,47.6,66.8];
+const rf=[1.8,3.9,8.8,21.7,42.4,65.5,84.3];
+Chart.defaults.color=v("--sub");Chart.defaults.borderColor=v("--line");
+Chart.defaults.font.family='"Hiragino Sans","Noto Sans JP",sans-serif';
+
+new Chart(document.getElementById("c1"),{type:"bar",
+ data:{labels:ages,datasets:[
+  {label:"男",data:male.map(x=>-x),backgroundColor:v("--m")},
+  {label:"女",data:female,backgroundColor:v("--f")}]},
+ options:{indexAxis:"y",maintainAspectRatio:false,
+  plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fmt(Math.abs(c.raw))}千人`}}},
+  scales:{x:{stacked:true,min:-1200,max:1200,ticks:{callback:x=>Math.abs(x)}},
+          y:{stacked:true,reverse:true}},
+  barPercentage:.85,categoryPercentage:.9}});
+
+new Chart(document.getElementById("c2"),{type:"line",
+ data:{labels:ages,datasets:[
+  {label:"男",data:rm,borderColor:v("--m"),backgroundColor:v("--m"),tension:.15},
+  {label:"女",data:rf,borderColor:v("--f"),backgroundColor:v("--f"),tension:.15}]},
+ options:{maintainAspectRatio:false,
+  plugins:{legend:{position:"bottom"},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fmt(c.raw)}%`}}},
+  scales:{y:{min:0,max:90,ticks:{callback:x=>x+"%"}}}}});
+</script>
+</body>
+</html>
