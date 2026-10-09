@@ -1,2 +1,5 @@
-# kaigo-stats
-Number of Certified Persons and Benefit Recipients by Sex, and Percentage of Certified Persons Receiving Benefits
+[![License](https://img.shields.io/badge/license-UN-blue)](LICENSE)
+
+
+⚠️COPYRIGHT<br>
+All non-code text authored by the repository owner is licensed under CC0 1.0 Universal.
