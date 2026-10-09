@@ -31,6 +31,11 @@ tr.grp td{text-align:left;font-weight:700;padding-top:14px;border-bottom:1px sol
 <p class="note">各年4月審査分。単位:千人、受給率は%。増減は筆者が算出。(受給率はポイント差)</p>
 <div class="scroll"><table id="t"></table></div>
 
+<h2>受給者数の男女比</h2>
+<div class="legend"><span><i style="background:var(--m)"></i>男</span><span><i style="background:var(--f)"></i>女</span></div>
+<div class="box" style="height:130px"><canvas id="c0"></canvas></div>
+<p class="note">各年4月審査分。単位:%</p>
+
 <h2>65歳以上の性・年齢階級別受給者数(令和7年11月審査分)※タップで詳細</h2>
 <div class="legend"><span><i style="background:var(--m)"></i>男</span><span><i style="background:var(--f)"></i>女</span></div>
 <div class="box" style="height:360px"><canvas id="c1"></canvas></div>
@@ -47,13 +52,14 @@ tr.grp td{text-align:left;font-weight:700;padding-top:14px;border-bottom:1px sol
 const rows=[
  ["認定者数(千人)",[["総数",7492.0,7618.9],["男",2438.1,2484.8],["女",5053.9,5134.1]]],
  ["受給者数(千人)",[["総数",5726.4,5858.9],["男",1777.0,1825.6],["女",3949.4,4033.3]]],
- ["認定者数に占める受給者数の割合(%)",[["総数",76.4,76.9],["男",72.9,73.5],["女",78.1,78.6]]]
+ ["認定者数に占める受給者数の割合(%)",[["総数",76.4,76.9],["男",72.9,73.5],["女",78.1,78.6]]],
+ ["受給者数の構成割合(%)",[["総数",100.0,100.0],["男",31.0,31.2],["女",69.0,68.8]]]
 ];
 const fmt=(v,d=1)=>v.toLocaleString("ja-JP",{minimumFractionDigits:d,maximumFractionDigits:d});
 let h='<thead><tr><th></th><th>令和7年<br>(2025)</th><th>令和8年<br>(2026)</th><th>増減</th></tr></thead><tbody>';
 rows.forEach(([g,list])=>{
  h+=`<tr class="grp"><td colspan="4">${g}</td></tr>`;
- list.forEach(([n,a,b])=>{const d=b-a;h+=`<tr><td>${n}</td><td>${fmt(a)}</td><td>${fmt(b)}</td><td>${d>=0?"+":"−"}${fmt(Math.abs(d))}</td></tr>`});
+ list.forEach(([n,a,b])=>{const d=b-a;h+=`<tr><td>${n}</td><td>${fmt(a)}</td><td>${fmt(b)}</td><td>${Math.abs(d)<0.05?"±":d>0?"+":"−"}${fmt(Math.abs(d))}</td></tr>`});
 });
 document.getElementById("t").innerHTML=h+"</tbody>";
 
@@ -66,6 +72,20 @@ const rm=[2.4,4.5,8.0,15.3,28.5,47.6,66.8];
 const rf=[1.8,3.9,8.8,21.7,42.4,65.5,84.3];
 Chart.defaults.color=v("--sub");Chart.defaults.borderColor=v("--line");
 Chart.defaults.font.family='"Hiragino Sans","Noto Sans JP",sans-serif';
+
+const valueLabels={id:"valueLabels",afterDatasetsDraw(ch){
+ const x=ch.ctx;x.save();x.font='600 13px "Hiragino Sans","Noto Sans JP",sans-serif';x.textAlign="center";x.textBaseline="middle";x.fillStyle="#fff";
+ ch.data.datasets.forEach((ds,i)=>ch.getDatasetMeta(i).data.forEach((b,j)=>{const p=b.getCenterPoint();x.fillText(fmt(ds.data[j])+"%",p.x,p.y)}));
+ x.restore()}};
+new Chart(document.getElementById("c0"),{type:"bar",
+ data:{labels:["令和7年(2025)","令和8年(2026)"],datasets:[
+  {label:"男",data:[31.0,31.2],backgroundColor:v("--m")},
+  {label:"女",data:[69.0,68.8],backgroundColor:v("--f")}]},
+ options:{indexAxis:"y",maintainAspectRatio:false,
+  plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fmt(c.raw)}%`}}},
+  scales:{x:{stacked:true,min:0,max:100,ticks:{callback:x=>x+"%"}},y:{stacked:true}},
+  barPercentage:.7},
+ plugins:[valueLabels]});
 
 new Chart(document.getElementById("c1"),{type:"bar",
  data:{labels:ages,datasets:[
